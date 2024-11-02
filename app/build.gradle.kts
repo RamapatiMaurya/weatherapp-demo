@@ -2,6 +2,10 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+
+    alias(libs.plugins.kapt)
+    alias(libs.plugins.hilt)
+    alias(libs.plugins.ksp) apply false
 }
 
 android {
@@ -16,6 +20,11 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        vectorDrawables {
+            useSupportLibrary = true
+        }
+        buildConfigField("String", "API_KEY", "\"${property("API_KEY")}\"")
     }
 
     buildTypes {
@@ -36,6 +45,15 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
+    }
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.4.3"
+    }
+    packaging {
+        resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        }
     }
 }
 
@@ -56,4 +74,20 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+
+    implementation(libs.hilt.android)
+    implementation(libs.hilt.navigation.compose)
+    kapt(libs.hilt.compiler)
+    implementation(libs.timber)
+    implementation(libs.retrofit2)
+    implementation(libs.retrofit2.converter.gson)
+    implementation(libs.gson)
+    implementation(libs.okhttp3.logging.interceptor)
+    implementation(libs.coil)
+    implementation(libs.lottie)
+    implementation(libs.lifecycle.runtime.compose)
+    testImplementation(libs.mockk)
+    testImplementation(libs.turbine)
+    testImplementation(libs.androidx.core.testing)
+    testImplementation(libs.kotlinx.coroutines.test)
 }
