@@ -41,14 +41,14 @@ class WeatherViewModel @Inject constructor(
     }
 
     init {
-        getWeather()
+        getWeather("Pune")
     }
 
     fun getWeather(city: String = DEFAULT_WEATHER_DESTINATION) {
-        repository.getWeatherForecast(city).map { result ->
+        repository.getWeather(city).map { result ->
             when (result) {
                 is Result.Success -> {
-                    _uiState.value = WeatherUiState(weather = result.data)
+                    _uiState.value = WeatherUiState(weatherResponse = result.data)
                 }
 
                 is Result.Error -> {

@@ -1,11 +1,8 @@
 package com.misri.weatherapp_demo.ui.weather
-import com.misri.weatherapp_demo.data.model.ForecastResponse.Current.Condition
 
-import android.content.res.Configuration
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,8 +11,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -49,24 +44,16 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Devices.PIXEL_XL
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.misri.weatherapp_demo.R
-import com.misri.weatherapp_demo.model.Forecast
-import com.misri.weatherapp_demo.model.Hour
-import com.misri.weatherapp_demo.model.Weather
 import com.misri.weatherapp_demo.ui.components.Animation
-import com.misri.weatherapp_demo.ui.components.ForecastComponent
-import com.misri.weatherapp_demo.ui.components.HourlyComponent
 import com.misri.weatherapp_demo.ui.components.WeatherComponent
-import com.misri.weatherapp_demo.ui.theme.WeatherappdemoTheme
-import com.misri.weatherapp_demo.utils.DateUtil.toFormattedDate
-import java.util.Locale
-import kotlin.random.Random
+import com.misri.weatherapp_demo.utils.DateUtil
+
 
 @Composable
 fun WeatherScreen(
@@ -180,11 +167,11 @@ private fun WeatherSuccessState(
     ) {
         Text(
             modifier = Modifier.padding(top = 12.dp),
-            text = uiState.weather?.name.orEmpty(),
+            text = uiState.weatherResponse?.city.orEmpty(),
             style = MaterialTheme.typography.headlineMedium
         )
         Text(
-            text = uiState.weather?.date?.toFormattedDate().orEmpty(),
+            text = uiState.weatherResponse?.datetime?.let { DateUtil.convertLongToTime(it) } ?: "",
             style = MaterialTheme.typography.bodyLarge
         )
 
@@ -192,7 +179,7 @@ private fun WeatherSuccessState(
             modifier = Modifier.size(64.dp),
             model = stringResource(
                 R.string.icon_image_url,
-                uiState.weather?.condition?.icon.orEmpty(),
+                uiState.weatherResponse?.weatherDatas?.get(0)?.icon.orEmpty(),
             ),
             contentScale = ContentScale.FillBounds,
             contentDescription = null,
@@ -202,21 +189,21 @@ private fun WeatherSuccessState(
         Text(
             text = stringResource(
                 R.string.temperature_value_in_celsius,
-                uiState.weather?.temperature.toString()
+                uiState.weatherResponse?.main?.temp.toString()
             ),
             style = MaterialTheme.typography.headlineLarge,
             fontWeight = FontWeight.Bold,
         )
         Text(
             modifier = Modifier.padding(start = 12.dp, end = 12.dp),
-            text = uiState.weather?.condition?.text.orEmpty(),
+            text = uiState.weatherResponse?.weatherDatas?.get(0)?.description.orEmpty(),
             style = MaterialTheme.typography.bodyMedium,
         )
         Text(
             modifier = Modifier.padding(bottom = 4.dp),
             text = stringResource(
                 R.string.feels_like_temperature_in_celsius,
-                uiState.weather?.feelsLike.toString()
+                uiState.weatherResponse?.main?.feel_like.toString()
             ),
             style = MaterialTheme.typography.bodySmall
         )
@@ -228,14 +215,14 @@ private fun WeatherSuccessState(
             Image(painter = painterResource(id = R.drawable.ic_sunrise), contentDescription = null)
             Text(
                 modifier = Modifier.padding(start = 4.dp),
-                text = uiState.weather?.forecasts?.get(0)?.sunrise?.lowercase(Locale.US).orEmpty(),
+                text = uiState.weatherResponse?.sunInfo?.sunrise?.let { DateUtil.convertLongToTime(it) }?:"",
                 style = MaterialTheme.typography.bodySmall,
             )
             Spacer(modifier = Modifier.width(16.dp))
             Image(painter = painterResource(id = R.drawable.ic_sunset), contentDescription = null)
             Text(
                 modifier = Modifier.padding(start = 4.dp),
-                text = uiState.weather?.forecasts?.get(0)?.sunset?.lowercase(Locale.US).orEmpty(),
+                text = uiState.weatherResponse?.sunInfo?.sunset?.let { DateUtil.convertLongToTime(it) }?:"",
                 style = MaterialTheme.typography.bodySmall,
             )
         }
@@ -249,21 +236,15 @@ private fun WeatherSuccessState(
             WeatherComponent(
                 modifier = Modifier.weight(1f),
                 weatherLabel = stringResource(R.string.wind_speed_label),
-                weatherValue = uiState.weather?.wind.toString(),
+                weatherValue = uiState.weatherResponse?.wind.toString(),
                 weatherUnit = stringResource(R.string.wind_speed_unit),
                 iconId = R.drawable.ic_wind,
             )
-            WeatherComponent(
-                modifier = Modifier.weight(1f),
-                weatherLabel = stringResource(R.string.uv_index_label),
-                weatherValue = uiState.weather?.uv.toString(),
-                weatherUnit = stringResource(R.string.uv_unit),
-                iconId = R.drawable.ic_uv,
-            )
+
             WeatherComponent(
                 modifier = Modifier.weight(1f),
                 weatherLabel = stringResource(R.string.humidity_label),
-                weatherValue = uiState.weather?.humidity.toString(),
+                weatherValue = uiState.weatherResponse?.main?.humidity.toString(),
                 weatherUnit = stringResource(R.string.humidity_unit),
                 iconId = R.drawable.ic_humidity,
             )
@@ -277,112 +258,11 @@ private fun WeatherSuccessState(
                 .align(Alignment.Start)
                 .padding(horizontal = 16.dp),
         )
-        LazyRow(
-            modifier = Modifier.fillMaxWidth(),
-            contentPadding = PaddingValues(top = 8.dp, start = 16.dp),
-        ) {
-            uiState.weather?.forecasts?.get(0)?.let { forecast ->
-                items(forecast.hour) { hour ->
-                    HourlyComponent(
-                        time = hour.time,
-                        icon = hour.icon,
-                        temperature = stringResource(
-                            R.string.temperature_value_in_celsius,
-                            hour.temperature,
-                        )
-                    )
-                }
-            }
-        }
 
-        Spacer(Modifier.height(16.dp))
-        Text(
-            text = stringResource(R.string.forecast),
-            style = MaterialTheme.typography.bodyMedium,
-            modifier = modifier
-                .align(Alignment.Start)
-                .padding(horizontal = 16.dp),
-        )
-
-        LazyRow(
-            modifier = Modifier.fillMaxWidth(),
-            contentPadding = PaddingValues(top = 8.dp, start = 16.dp),
-        ) {
-            uiState.weather?.let { weather ->
-                items(weather.forecasts) { forecast ->
-                    ForecastComponent(
-                        date = forecast.date,
-                        icon = forecast.icon,
-                        minTemp = stringResource(
-                            R.string.temperature_value_in_celsius,
-                            forecast.minTemp
-                        ),
-                        maxTemp = stringResource(
-                            R.string.temperature_value_in_celsius,
-                            forecast.maxTemp,
-                        ),
-                    )
-                }
-            }
-        }
         Spacer(Modifier.height(16.dp))
     }
 }
 
-@Preview(name = "Light Mode", showBackground = true, showSystemUi = true)
-@Preview(
-    name = "Dark Mode",
-    uiMode = Configuration.UI_MODE_NIGHT_YES,
-    showSystemUi = true,
-    showBackground = true,
-    device = PIXEL_XL
-)
-@Composable
-fun WeatherScreenContentPreview() {
-    val hourlyForecast = mutableListOf<Hour>()
-    for (i in 0 until 24) {
-        hourlyForecast.add(
-            Hour(
-                "yyyy-mm-dd ${String.format(Locale.getDefault(),"%02d", i)}",
-                "",
-                "${Random.nextInt(18, 21)}"
-            )
-        )
-    }
-    val forecasts = mutableListOf<Forecast>()
-    for (i in 0..9) {
-        forecasts.add(
-            Forecast(
-                "2023-10-${String.format(Locale.getDefault(),"%02d", i)}",
-                "${Random.nextInt(18, 21)}",
-                "${Random.nextInt(10, 15)}",
-                "07:20 am",
-                "06:40 pm",
-                "",
-                hourlyForecast
-            )
-        )
-    }
-    WeatherappdemoTheme {
-        Surface {
-            WeatherScreenContent(
-                WeatherUiState(
-                    Weather(
-                        temperature = 19,
-                        date = "Oct 7",
-                        wind = 22,
-                        humidity = 35,
-                        feelsLike = 18,
-                        condition = Condition(10, "", "Cloudy"),
-                        uv = 2,
-                        name = "Munich",
-                        forecasts = forecasts,
-                    ),
-                ), viewModel = null
-            )
-        }
-    }
-}
 
 @Composable
 fun WeatherTopAppBar(

@@ -1,8 +1,7 @@
 package com.misri.weatherapp_demo.data.repository
 
-import com.misri.weatherapp_demo.data.model.toWeather
+import com.misri.weatherapp_demo.data.model.WeatherResponse
 import com.misri.weatherapp_demo.data.network.WeatherApi
-import com.misri.weatherapp_demo.model.Weather
 import com.misri.weatherapp_demo.utils.Result
 
 import kotlinx.coroutines.CoroutineDispatcher
@@ -18,10 +17,11 @@ class DefaultWeatherRepository @Inject constructor(
     private val weatherApi: WeatherApi,
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : WeatherRepository {
-    override fun getWeatherForecast(city: String): Flow<Result<Weather>> = flow {
+
+    override fun getWeather(city: String): Flow<Result<WeatherResponse>> = flow {
         emit(Result.Loading)
         try {
-            val result = weatherApi.getWeatherForecast(city = city).toWeather()
+            val result = weatherApi.getWeather()
             emit(Result.Success(result))
         } catch (exception: HttpException) {
             emit(Result.Error(exception.message.orEmpty()))

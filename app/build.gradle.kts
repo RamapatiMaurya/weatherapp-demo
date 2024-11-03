@@ -10,7 +10,7 @@ plugins {
 
 android {
     namespace = "com.misri.weatherapp_demo"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.misri.weatherapp_demo"
